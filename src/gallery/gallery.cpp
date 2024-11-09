@@ -16,42 +16,63 @@ Gallery::Gallery(wxWindow *parent)
 }
 
 void Gallery::load_images() {
-  m_objects.push_back({{"D:/pjojects/images/New folder/n1.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
-  m_objects.push_back({{"D:/pjojects/images/New folder/a.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
-  m_objects.push_back({{"D:/pjojects/images/New folder/n2.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
-  m_objects.push_back({{"D:/pjojects/images/New folder/n3.jpg",wxBITMAP_TYPE_ANY},wxRect()});
-  m_objects.push_back({{"D:/pjojects/images/New folder/n4.jpg",wxBITMAP_TYPE_ANY},wxRect()});
-  m_objects.push_back({{"D:/pjojects/images/New folder/n5.jpg",wxBITMAP_TYPE_ANY},wxRect()});
+  m_objects.push_back(
+      {{"D:/pjojects/images/New folder/n1.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+  m_objects.push_back(
+      {{"D:/pjojects/images/New folder/a.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+  m_objects.push_back(
+      {{"D:/pjojects/images/New folder/n2.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+  m_objects.push_back(
+      {{"D:/pjojects/images/New folder/n3.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+  m_objects.push_back(
+      {{"D:/pjojects/images/New folder/n4.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+  m_objects.push_back(
+      {{"D:/pjojects/images/New folder/n5.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
 }
 
 void Gallery::on_paint(wxPaintEvent &evt) {
   wxAutoBufferedPaintDC dc(this);
-  dc.SetBackground(wxBrush("white"));
+  dc.SetBackground(wxBrush("#1e1e1e"));
   dc.Clear();
 
   auto gc = wxGraphicsContext::Create(dc);
 
   if (gc && !m_objects.empty()) {
-    if (m_objects.at(m_index()).image.IsOk())
+    auto rect = f_rect;
+    rect.Deflate(m_deflation() - 3);
+    gc->PushState();
+    gc->SetBrush(wxBrush("#0002"));
+    gc->DrawRoundedRectangle(rect.x-3, rect.y+3, rect.width, rect.height, 1);
+    gc->PopState();
+
+    if (m_objects.at(index).image.IsOk())
 
     {
 
-      this->draw_image(&gc, m_objects.at(m_index()).image,
-                       m_objects.at(m_index()).rect, 3);
+      this->draw_image(&gc, m_objects.at(index).image,
+                       m_objects.at(index).rect, 6);
     }
 
-    for (auto i = 0; i < m_objects.size(); i++) {
-      if (i == m_index())
-        continue;
-
+    for (size_t i = (m_index() + 1) % m_objects.size(); i != m_index();
+         i = (i + 1) % m_objects.size()) {
+ 
       if (m_objects.at(i).image.IsOk()) {
 
         this->draw_image(&gc, m_objects.at(i).image, m_objects.at(i).rect, 2);
+
+        gc->SetFont(wxFont(10, wxFONTFAMILY_DECORATIVE, wxFONTSTYLE_NORMAL,
+                           wxFONTWEIGHT_BOLD),
+                    "#fff");
+
+        gc->DrawText(wxString::Format("image: %zu", i),
+                     m_objects.at(i).rect.x + 10,
+                     m_objects.at(i).rect.y + m_objects.at(i).rect.height / 2);
 
       } else {
         wxLogDebug("Image at index %zu not ok!", i);
       }
     }
+    
 
     delete gc;
   }
@@ -92,9 +113,6 @@ void Gallery::draw_image(wxGraphicsContext **gc, const wxBitmap &image,
   double x = rect.GetX() + rect.GetWidth() / 2 - image_width / 2;
   double y = rect.GetY() + rect.GetHeight() / 2 - image_height / 2;
 
-  // wxLogMessage("image: (x:%.2f,y:%.2f,w:%.2f,h:%.2f)", x, y, image_width,
-  //              image_height);
-
   (*gc)->DrawBitmap(image, x, y, image_width, image_height);
 
   if (roundness)
@@ -106,62 +124,53 @@ void Gallery::on_size(wxSizeEvent &evt) {
   if (f_rect.IsEmpty() || f_rect != rect ||
       f_rect.GetPosition() != rect.GetPosition()) {
     f_rect = rect;
-    m_objects.at(m_index()).rect = rect;
-    m_objects.at(m_index()).rect.Deflate(FromDIP(m_deflation()));
   }
   this->update_cordinates();
-  wxLogDebug("calling size");
   evt.Skip();
 }
 
 void Gallery::update_cordinates() {
   m_objects.at(m_index()).rect = get_banner_rect();
 
-  double card_width = f_rect.GetWidth() * 0.2;
-  double card_height = f_rect.GetHeight() * 0.4;
+  const double card_width = f_rect.GetWidth() * 0.2;
+  const double card_height = f_rect.GetHeight() * 0.4;
 
-  double y = f_rect.GetY() + (f_rect.GetHeight() - card_height) / 2;
+  const double y = f_rect.GetY() + (f_rect.GetHeight() - card_height) / 2;
 
   double ix = f_rect.GetX() + f_rect.GetWidth() / 2;
 
-  size_t offset = 0;
+  size_t relative_1 = 0;
 
-  for (size_t i = 0; i < m_objects.size(); i++) {
-    if (i == m_index()) {
-      offset++;
-      continue;
-    }
+  for (size_t i = (m_index() + 1) % m_objects.size(); i != m_index();
+         i = (i + 1) % m_objects.size()) 
+         
+{
     const size_t index = i;
 
-    double x = ix + static_cast<double>(index-offset) * (m_gap + card_width);
+    const double x = ix + static_cast<double>(relative_1) * (m_gap + card_width);
 
-    m_objects.at(index).rect =
-        wxRect2DDouble_to_wxRect(wxRect2DDouble(x, y, card_width, card_height));
-    
+    m_objects.at(index).rect = wxRect2DDouble_to_wxRect(wxRect2DDouble(x, y, card_width, card_height));
+
+    if(relative_1 < m_objects.size())
+    relative_1 ++;
+
   }
-  for (size_t i = 0; i < m_objects.size(); i++) {
 
+
+  for (size_t i = 0; i < m_objects.size(); i++) {
     const size_t index = i;
     const size_t pindex = index <= 0 ? m_objects.size() - 1 : index - 1;
     const size_t nindex = index < m_objects.size() - 1 ? index + 1 : 0;
 
-   m_objects.at(index).prev_rect =  m_objects.at(pindex).rect;
-   m_objects.at(index).future_rect =  m_objects.at(nindex).rect;
+    m_objects.at(i).prev_rect = m_objects.at(pindex).rect;
+    m_objects.at(i).future_rect = m_objects.at(nindex).rect;
+
   }
-   for (size_t i = 0; i < m_objects.size(); i++) 
-   {
-      wxLogDebug("%zu",i);
-      log_rect(m_objects.at(i).rect);
-      log_rect("prev",m_objects.at(i).prev_rect);
-      log_rect("fiture",m_objects.at(i).future_rect);
-   }
-  // wxLogDebug("%zu",m_index());
-  // log_rect(m_objects.at(m_index()).rect);
-  // log_rect("prev",m_objects.at(m_index()).rect);
-  // log_rect("fiture",m_objects.at(m_index()).rect);
-
-  this->f_refresh();
-
+  // this->f_refresh();
+  //  for (size_t i = 0; i < m_objects.size(); i++) 
+  //  {
+  //   m_objects.at(i).log_all();
+  //  }
 }
 
 void Gallery::on_key_down(wxKeyEvent &evt) {
@@ -170,6 +179,11 @@ void Gallery::on_key_down(wxKeyEvent &evt) {
     this->next();
   } else if (evt.GetKeyCode() == WXK_LEFT) {
     this->prev();
+  }
+  if(evt.GetUnicodeKey() == 'R')
+  {
+     this->update_cordinates();
+     this->f_refresh();
   }
 
   evt.Skip();
