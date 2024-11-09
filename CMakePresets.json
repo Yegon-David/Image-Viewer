@@ -1,0 +1,95 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 30,
+      "patch": 0
+    },
+    "configurePresets": [
+      {
+        "name": "mingw-debug",
+        "hidden": false,
+        "description": "Configure using MinGW Makefiles Debug",
+        "generator": "MinGW Makefiles",
+        "binaryDir": "${sourceDir}/build/mingw/debug",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "CMAKE_C_COMPILER": "gcc",
+          "CMAKE_CXX_COMPILER": "g++",
+          "CMAKE_INSTALL_PREFIX":"D:/pjojects/c++/tools/",
+          "USE_MLIB":"OFF"
+          
+        }
+      },
+      {
+        "name": "mingw-release",
+        "hidden": false,
+        "description": "Configure using MinGW Makefiles Release",
+        "generator": "MinGW Makefiles",
+        "binaryDir": "${sourceDir}/build/mingw/release",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_C_COMPILER": "gcc",
+          "CMAKE_CXX_COMPILER": "g++",
+          "CMAKE_INSTALL_PREFIX":"D:/pjojects/c++/tools/",
+          "USE_MLIB":"OFF"
+        }
+      },
+      {
+        "name": "msvc-debug",
+        "hidden": false,
+        "description": "Configure using Visual Studio Debug",
+        "generator": "Visual Studio 17 2022",  
+        "binaryDir": "${sourceDir}/build/msvc/debug",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "CMAKE_INSTALL_PREFIX": "D:/pjojects/c++/tools/",
+          "USE_MLIB":"OFF"
+        }
+      },
+      {
+        "name": "msvc-release",
+        "hidden": false,
+        "description": "Configure using Visual Studio Release",
+        "generator": "Visual Studio 17 2022",  
+        "binaryDir": "${sourceDir}/build/msvc/release",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_INSTALL_PREFIX": "D:/pjojects/c++/tools/",
+          "USE_MLIB":"OFF"
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "mingw-debug",
+        "hidden": false,
+        "description": "Build using MinGW Makefiles in Debug mode",
+        "configurePreset": "mingw-debug",
+        "jobs": 4
+      },
+      {
+        "name": "mingw-release",
+        "hidden": false,
+        "description": "Build using MinGW Makefiles in Release mode",
+        "configurePreset": "mingw-release",
+        "jobs": 4
+      },
+      {
+        "name": "msvc-debug",
+        "hidden": false,
+        "description": "Build using Visual Studio in Debug mode",
+        "configurePreset": "msvc-debug",
+        "jobs": 4
+      }
+      ,
+      {
+        "name": "msvc-release",
+        "hidden": false,
+        "description": "Build using Visual Studio in Release mode",
+        "configurePreset": "msvc-release",
+        "jobs": 4
+      }
+    ]
+  }
+  

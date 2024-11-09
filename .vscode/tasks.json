@@ -1,0 +1,46 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "CMake: Configure with Preset",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "msvc-debug"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$msvc"
+            ],
+            "detail": "Runs CMake configure using the configure preset"
+        },
+        {
+            "label": "CMake: Build with Preset",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "msvc-debug"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$msvc"
+            ],
+            "detail": "Builds the project using the build preset"
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command":"rmdir",
+            "args": ["/S","/Q","build"]
+        }
+    ]
+}
