@@ -20,7 +20,6 @@ struct ImageObject {
   
   void move(const double &t, const bool &forward = true) {
 
-    if (forward) {
       rect.SetX(static_cast<int>(prev_rect.x +
                                  t * t * (future_rect.x - prev_rect.x)));
       rect.SetY(static_cast<int>(prev_rect.y +
@@ -29,17 +28,7 @@ struct ImageObject {
           prev_rect.width + t * t * (future_rect.width - prev_rect.width)));
       rect.SetHeight(static_cast<int>(
           prev_rect.height + t * t * (future_rect.height - prev_rect.height)));
-    } else {
-      rect.SetX(static_cast<int>(future_rect.x +
-                                 t * t * (prev_rect.x - future_rect.x)));
-      rect.SetY(static_cast<int>(future_rect.y +
-                                 t * t * (prev_rect.y - future_rect.y)));
-      rect.SetWidth(static_cast<int>(
-          future_rect.width + t * t * (prev_rect.width - future_rect.width)));
-      rect.SetHeight(
-          static_cast<int>(future_rect.height +
-                           t * t * (prev_rect.height - future_rect.height)));
-    }
+    
   }
   
   inline wxString srect()
@@ -54,6 +43,7 @@ struct ImageObject {
   {
      return wxString::Format("future:(x:%d,y:%d,w:%d,h:%d)",future_rect.x, future_rect.y, future_rect.width, future_rect.height);
   }
+
   void log_all()
   {
     wxLogDebug("%s\n%s\n%s\n",prev(),srect(),future());
@@ -62,7 +52,9 @@ struct ImageObject {
 
 class DataLogic {
 public:
-  DataLogic() : active_index(0), deflation(30), m_gap(20),index(m_index()) {}
+  DataLogic() : active_index(0), deflation(30), m_gap(20),index(m_index()) {
+    offset=0;offset_start=offset;offset_end=0;
+  }
 
   void next() {
    
@@ -92,13 +84,37 @@ public:
   {
     active_index = value;
   }
-
+  ImageObject pop()
+  {
+    ImageObject temp;
+    auto it = m_objects.begin()+m_index();
+    temp = *it;
+    m_objects.erase(it);
+    return temp;
+  }
+  void add_back()
+  {
+    m_objects.insert(m_objects.begin()+m_objects.size()-1,m_object);
+  }
+  void add_front()
+  {
+    m_objects.insert(m_objects.begin(),m_object_front);
+  }
+  void set_next()
+  {
+    ImageObject n_temp = pop();
+    add_back();
+    m_object = n_temp;
+  }
 private:
   size_t active_index, deflation;
 
+
+
 protected:
   std::vector<ImageObject> m_objects;
-  double m_gap;
+  ImageObject m_object,m_object_front,m_object_back;
+  double m_gap,offset,offset_start,offset_end;
   size_t index;
 
   const size_t m_index() const { return active_index; }
@@ -125,7 +141,14 @@ protected:
   virtual void animate_prev() = 0;
   virtual void animate_pick_at() = 0;
   virtual const bool isrunning() const = 0;
-
+  
+  void log()
+  {
+     for (size_t i = 0; i < m_objects.size(); i++)
+     {
+      m_objects.at(i).log_all();
+     }
+  }
   void log_order() {
     if (!(m_objects.size() > 1))
       return;

@@ -26,7 +26,7 @@ private:
     
 
 protected:
-    wxRect f_rect,o_rect,prev_old_rect;
+    wxRect f_rect;
     
     Animation a_type;
     
@@ -36,11 +36,16 @@ protected:
 
     virtual void refresh()=0;
     virtual void f_refresh()=0;
+    virtual wxRect get_next_rect() const = 0;
 
     virtual void update_cordinates()=0;
 
     void animate();
 
     const bool isrunning() const {return m_timer.IsRunning();}
+
+    void displace();
+
+    void animate_rect(wxRect& rect_to_animate,const wxRect& rect_old,const wxRect& rect_new,const double &t);
 
 };

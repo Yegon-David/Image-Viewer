@@ -6,7 +6,7 @@ Frame::Frame(const wxString & title) :
 wxFrame(nullptr,wxID_ANY,title)
 {
     wxInitAllImageHandlers();
-    this->SetPosition({1600,300});
+    this->SetPosition({1700,300});
        
     m_gallery = new Gallery(this);
     

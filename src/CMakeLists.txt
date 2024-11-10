@@ -9,7 +9,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
                         ${CMAKE_CURRENT_SOURCE_DIR}/gallery
                         )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES} gallery)
 
 target_precompile_headers(gallery PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common/pch.hpp)
 

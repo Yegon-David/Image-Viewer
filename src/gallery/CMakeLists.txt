@@ -1,7 +1,6 @@
 
 add_library(gallery STATIC gallery.cpp animation.cpp)
 
-target_link_libraries(gallery PRIVATE ${wxWidgets_LIBRARIES})
 
 target_include_directories(gallery PRIVATE 
                     ${wxWidgets_INCLUDE_DIRS} 

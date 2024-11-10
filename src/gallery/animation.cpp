@@ -1,7 +1,7 @@
 #include "animation.hpp"
 
 AnimationLogic::AnimationLogic()
-    : DataLogic(), wxEvtHandler(), m_timer(this, wxID_ANY), m_duration(1000),
+    : DataLogic(), wxEvtHandler(), m_timer(this, wxID_ANY), m_duration(500),
       a_type(Animation::Single) {
 
   Bind(wxEVT_MOVE, &AnimationLogic::on_move, this);
@@ -14,37 +14,20 @@ void AnimationLogic::on_timer(wxTimerEvent &evt) {
   if (elapsed <= m_duration) {
     double t = elapsed / m_duration;
 
-    for (size_t i = (m_index() + 1) % m_objects.size(); i != m_index();
-         i = (i + 1) % m_objects.size()) {
-         auto initial_rect = m_objects.at(i).rect;
-         auto target_rect = m_objects.at(i).future_rect;
+    animate_rect(m_object_front.rect, m_object_front.prev_rect,
+                 m_object_front.future_rect, t);
 
-            if (a_type==Animation::Next) {
-                 m_objects.at(i).rect.SetX(static_cast<int>(initial_rect.x +
-                                            t * t * (target_rect.x - initial_rect.x)));
-                 m_objects.at(i).rect.SetY(static_cast<int>(initial_rect.y +
-                                            t * t * (target_rect.y - initial_rect.y)));
-                 m_objects.at(i).rect.SetWidth(static_cast<int>(
-                    initial_rect.width + t * t * (target_rect.width - initial_rect.width)));
-                 m_objects.at(i).rect.SetHeight(static_cast<int>(
-                    initial_rect.height + t * t * (target_rect.height - initial_rect.height)));
-                } else {
-                 m_objects.at(i).rect.SetX(static_cast<int>(target_rect.x +
-                                            t * t * (initial_rect.x - target_rect.x)));
-                 m_objects.at(i).rect.SetY(static_cast<int>(target_rect.y +
-                                            t * t * (initial_rect.y - target_rect.y)));
-                 m_objects.at(i).rect.SetWidth(static_cast<int>(
-                    target_rect.width + t * t * (initial_rect.width - target_rect.width)));
-                 m_objects.at(i).rect.SetHeight(
-                    static_cast<int>(target_rect.height +
-                                    t * t * (initial_rect.height - target_rect.height)));
-                }
-    }
+    offset = offset_start + t*t*(offset_end-offset_start);  
+    wxLogDebug("offset:%.3f",offset);           
 
   } else {
-    set(index);
+    animate_rect(m_object_front.rect, m_object_front.prev_rect,
+                 m_object_front.future_rect, 1);
+
     m_timer.Stop();
-    // this->update_cordinates();
+    set_next();
+    this->update_cordinates();
+
   }
   this->f_refresh();
   evt.Skip();
@@ -59,14 +42,11 @@ void AnimationLogic::on_move(wxMoveEvent &evt) {
 
 void AnimationLogic::animate_next() {
   a_type = Animation::Next;
-  index = future_index();
   this->animate();
 }
 
 void AnimationLogic::animate_prev() {
   a_type = Animation::Prev;
-  index = prev_index();
-
   this->animate();
 }
 
@@ -79,9 +59,43 @@ void AnimationLogic::animate() {
     wxLogDebug("No images to animate");
     return;
   }
-
+  this->displace();
   start_time = wxGetLocalTimeMillis();
 
   m_timer.Start(16);
-  wxLogDebug("index %zu", index);
+}
+
+void AnimationLogic::displace() {
+  switch (a_type) {
+
+  case Animation::Next:
+    m_object_front.future_rect = m_object_front.prev_rect;
+    m_object_front.prev_rect = m_object_front.rect;
+    break;
+
+  case Animation::Prev:
+    m_object_front.prev_rect = m_object_front.future_rect;
+    m_object_front.future_rect = m_object_front.rect;
+    break;
+
+  case Animation::Single:
+    offset=100;
+    break;
+
+  default:
+    break;
+  }
+  m_object_front.log_all();
+}
+
+void AnimationLogic::animate_rect(wxRect &rect, const wxRect &rect_old,
+                                  const wxRect &rect_new, const double &t) {
+
+  rect.SetX(static_cast<int>(rect_old.x + t * t * (rect_new.x - rect_old.x)));
+
+  rect.SetY(static_cast<int>(rect_old.y + t * t * (rect_new.y - rect_old.y)));
+  rect.SetWidth(static_cast<int>(rect_old.width +
+                                 t * t * (rect_new.width - rect_old.width)));
+  rect.SetHeight(static_cast<int>(rect_old.height +
+                                  t * t * (rect_new.height - rect_old.height)));
 }

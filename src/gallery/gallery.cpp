@@ -28,6 +28,9 @@ void Gallery::load_images() {
       {{"D:/pjojects/images/New folder/n4.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
   m_objects.push_back(
       {{"D:/pjojects/images/New folder/n5.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+
+  m_object = pop();
+ 
 }
 
 void Gallery::on_paint(wxPaintEvent &evt) {
@@ -41,24 +44,30 @@ void Gallery::on_paint(wxPaintEvent &evt) {
     auto rect = f_rect;
     rect.Deflate(m_deflation() - 3);
     gc->PushState();
-    gc->SetBrush(wxBrush("#0002"));
-    gc->DrawRoundedRectangle(rect.x-3, rect.y+3, rect.width, rect.height, 1);
+    gc->SetBrush(wxBrush("#0001"));
+    gc->DrawRoundedRectangle(rect.x-3, rect.y+7, rect.width, rect.height, 1);
     gc->PopState();
 
-    if (m_objects.at(index).image.IsOk())
+    if (m_object.image.IsOk())
 
     {
+      this->draw_image(&gc, m_object.image,
+                       m_object.rect,6);
+    }
+    if (isrunning() && m_object_front.image.IsOk())
 
-      this->draw_image(&gc, m_objects.at(index).image,
-                       m_objects.at(index).rect, 6);
+    {
+      this->draw_image(&gc, m_object_front.image,
+                       m_object_front.rect,6);
     }
 
-    for (size_t i = (m_index() + 1) % m_objects.size(); i != m_index();
-         i = (i + 1) % m_objects.size()) {
+    for (size_t i = 0;i<m_objects.size();i++) {
  
-      if (m_objects.at(i).image.IsOk()) {
+      if (m_objects.at(i).image.IsOk() && get_banner_rect() != m_objects.at(i).rect) {
 
-        this->draw_image(&gc, m_objects.at(i).image, m_objects.at(i).rect, 2);
+       
+        
+        this->draw_image(&gc, m_objects.at(i).image,m_objects.at(i).rect, 2);
 
         gc->SetFont(wxFont(10, wxFONTFAMILY_DECORATIVE, wxFONTSTYLE_NORMAL,
                            wxFONTWEIGHT_BOLD),
@@ -72,51 +81,51 @@ void Gallery::on_paint(wxPaintEvent &evt) {
         wxLogDebug("Image at index %zu not ok!", i);
       }
     }
-    
 
     delete gc;
   }
 }
 
 void Gallery::draw_image(wxGraphicsContext **gc, const wxBitmap &image,
-                         const wxRect &rect, const size_t &roundness) {
+                         const wxRect &rect, const size_t &roundness)
+{
 
-  wxPoint points[] = {
-      wxPoint(rect.GetX() + roundness, rect.GetY()),     // Top-left corner
-      wxPoint(rect.GetRight() - roundness, rect.GetY()), // Top-right corner
-      wxPoint(rect.GetRight(),
-              rect.GetY() + roundness), // Right-top corner curve
-      wxPoint(rect.GetRight(),
-              rect.GetBottom() - roundness), // Right-bottom corner
-      wxPoint(rect.GetRight() - roundness,
-              rect.GetBottom()), // Bottom-right corner curve
-      wxPoint(rect.GetX() + roundness,
-              rect.GetBottom()), // Bottom-left corner
-      wxPoint(rect.GetX(),
-              rect.GetBottom() - roundness),        // Left-bottom corner curve
-      wxPoint(rect.GetX(), rect.GetY() + roundness) // Left-top corner curve
-  };
-  wxRegion region(8, points, wxODDEVEN_RULE);
+    wxPoint points[] = {
+        wxPoint(rect.GetX() + roundness, rect.GetY()),     // Top-left corner
+        wxPoint(rect.GetRight() - roundness, rect.GetY()), // Top-right corner
+        wxPoint(rect.GetRight(),
+                rect.GetY() + roundness), // Right-top corner curve
+        wxPoint(rect.GetRight(),
+                rect.GetBottom() - roundness), // Right-bottom corner
+        wxPoint(rect.GetRight() - roundness,
+                rect.GetBottom()), // Bottom-right corner curve
+        wxPoint(rect.GetX() + roundness,
+                rect.GetBottom()), // Bottom-left corner
+        wxPoint(rect.GetX(),
+                rect.GetBottom() - roundness),        // Left-bottom corner curve
+        wxPoint(rect.GetX(), rect.GetY() + roundness) // Left-top corner curve
+    };
+    wxRegion region(8, points, wxODDEVEN_RULE);
 
-  if (roundness)
-    (*gc)->Clip(region);
+    if (roundness)
+        (*gc)->Clip(region);
 
-  double image_width =
-      static_cast<double>(image.GetWidth()); // is initially int
-  double image_height =
-      static_cast<double>(image.GetHeight()); // is initially int // cover
-  double scalex = static_cast<double>(rect.GetWidth()) / image.GetWidth();
-  double scaley = static_cast<double>(rect.GetHeight()) / image.GetHeight();
-  double scale = std::max(scalex, scaley);
-  image_width *= scale;
-  image_height *= scale;
-  double x = rect.GetX() + rect.GetWidth() / 2 - image_width / 2;
-  double y = rect.GetY() + rect.GetHeight() / 2 - image_height / 2;
+    double image_width =
+        static_cast<double>(image.GetWidth()); // is initially int
+    double image_height =
+        static_cast<double>(image.GetHeight()); // is initially int // cover
+    double scalex = static_cast<double>(rect.GetWidth()) / image.GetWidth();
+    double scaley = static_cast<double>(rect.GetHeight()) / image.GetHeight();
+    double scale = std::max(scalex, scaley);
+    image_width *= scale;
+    image_height *= scale;
+    double x = rect.GetX() + rect.GetWidth() / 2 - image_width / 2;
+    double y = rect.GetY() + rect.GetHeight() / 2 - image_height / 2;
 
-  (*gc)->DrawBitmap(image, x, y, image_width, image_height);
+    (*gc)->DrawBitmap(image, x, y, image_width, image_height);
 
-  if (roundness)
-    (*gc)->ResetClip();
+    if (roundness)
+        (*gc)->ResetClip();
 }
 
 void Gallery::on_size(wxSizeEvent &evt) {
@@ -130,47 +139,28 @@ void Gallery::on_size(wxSizeEvent &evt) {
 }
 
 void Gallery::update_cordinates() {
-  m_objects.at(m_index()).rect = get_banner_rect();
-
-  const double card_width = f_rect.GetWidth() * 0.2;
-  const double card_height = f_rect.GetHeight() * 0.4;
-
-  const double y = f_rect.GetY() + (f_rect.GetHeight() - card_height) / 2;
-
-  double ix = f_rect.GetX() + f_rect.GetWidth() / 2;
-
-  size_t relative_1 = 0;
-
-  for (size_t i = (m_index() + 1) % m_objects.size(); i != m_index();
-         i = (i + 1) % m_objects.size()) 
-         
-{
-    const size_t index = i;
-
-    const double x = ix + static_cast<double>(relative_1) * (m_gap + card_width);
-
-    m_objects.at(index).rect = wxRect2DDouble_to_wxRect(wxRect2DDouble(x, y, card_width, card_height));
-
-    if(relative_1 < m_objects.size())
-    relative_1 ++;
-
+  m_object.rect = get_banner_rect();
+  
+  auto init_rect = get_next_rect();
+  for (size_t i = 0;i<m_objects.size();i++)    
+  {
+      const double x = init_rect.x + static_cast<double>(i) * (m_gap + init_rect.width);
+      m_objects.at(i).rect = wxRect2DDouble_to_wxRect(wxRect2DDouble(x, init_rect.y, init_rect.width, init_rect.height));
   }
+   for (size_t i = 0;i<m_objects.size();i++)    
+   {
+    const size_t pindex = i <= 0 ? m_objects.size() - 1 : i - 1;
+    const size_t nindex = i < m_objects.size() - 1 ? i + 1 : 0;
+   
+    m_objects.at(i).prev_rect =(i==0)? m_object.rect : m_objects.at(pindex).rect;
+    m_objects.at(i).future_rect =(i==m_objects.size()-1)? m_object.rect : m_objects.at(nindex).rect;
+   }
 
-
-  for (size_t i = 0; i < m_objects.size(); i++) {
-    const size_t index = i;
-    const size_t pindex = index <= 0 ? m_objects.size() - 1 : index - 1;
-    const size_t nindex = index < m_objects.size() - 1 ? index + 1 : 0;
-
-    m_objects.at(i).prev_rect = m_objects.at(pindex).rect;
-    m_objects.at(i).future_rect = m_objects.at(nindex).rect;
-
-  }
-  // this->f_refresh();
-  //  for (size_t i = 0; i < m_objects.size(); i++) 
-  //  {
-  //   m_objects.at(i).log_all();
-  //  }
+     m_object_front = m_objects.at(0);
+     m_object_back = m_objects.at(m_objects.size()-1);
+    
+    m_object_front.log_all();
+  
 }
 
 void Gallery::on_key_down(wxKeyEvent &evt) {
@@ -184,6 +174,11 @@ void Gallery::on_key_down(wxKeyEvent &evt) {
   {
      this->update_cordinates();
      this->f_refresh();
+  }
+  else if(evt.GetUnicodeKey() == 'S')
+  {
+     a_type = Animation::Single;
+     this->animate();
   }
 
   evt.Skip();
