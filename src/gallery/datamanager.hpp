@@ -6,6 +6,7 @@ struct ImageObject {
   wxBitmap image;
 
   wxRect rect;
+  size_t id;
   wxRect prev_rect = wxRect();
   wxRect future_rect = wxRect();
 
@@ -18,7 +19,7 @@ struct ImageObject {
                             rect.x, rect.y, rect.width, rect.height);
   }
   
-  void move(const double &t, const bool &forward = true) {
+  void move(const double &t) {
 
       rect.SetX(static_cast<int>(prev_rect.x +
                                  t * t * (future_rect.x - prev_rect.x)));
@@ -53,12 +54,14 @@ struct ImageObject {
 class DataLogic {
 public:
   DataLogic() : active_index(0), deflation(30), m_gap(20),index(m_index()) {
-    offset=0;offset_start=offset;offset_end=0;
+    offset=0;
+    offset_start=offset;
+    offset_end=0;
   }
 
   void next() {
    
-    if (m_objects.empty() || m_objects.size() <= 1)
+    if (m_objects.empty())
       return;
 
     if (isrunning()) {
@@ -72,7 +75,7 @@ public:
   }
 
   void prev() {
-    if (m_objects.empty() || m_objects.size() <= 1)
+    if (m_objects.empty())
       return;
     if (isrunning()) {
       wxLogDebug("animation in progress");
@@ -80,10 +83,12 @@ public:
     }
     this->animate_prev();
   }
+
   void set(const size_t& value)
   {
     active_index = value;
   }
+  
   ImageObject pop()
   {
     ImageObject temp;
@@ -92,20 +97,37 @@ public:
     m_objects.erase(it);
     return temp;
   }
+  ImageObject pop_back()
+  {
+    ImageObject temp = m_objects.back();
+    m_objects.pop_back();
+    return temp;
+  }
+  
   void add_back()
   {
-    m_objects.insert(m_objects.begin()+m_objects.size()-1,m_object);
+    m_objects.insert(m_objects.end(),m_object);
   }
+  
   void add_front()
   {
-    m_objects.insert(m_objects.begin(),m_object_front);
+    m_objects.insert(m_objects.begin(),m_object);
   }
+  
   void set_next()
   {
     ImageObject n_temp = pop();
     add_back();
     m_object = n_temp;
   }
+
+  void set_prev()
+  {
+    ImageObject n_temp = pop_back();
+    add_front();
+    m_object = n_temp;
+  }
+
 private:
   size_t active_index, deflation;
 
@@ -113,7 +135,7 @@ private:
 
 protected:
   std::vector<ImageObject> m_objects;
-  ImageObject m_object,m_object_front,m_object_back;
+  ImageObject m_object,m_object_front;
   double m_gap,offset,offset_start,offset_end;
   size_t index;
 
@@ -141,61 +163,14 @@ protected:
   virtual void animate_prev() = 0;
   virtual void animate_pick_at() = 0;
   virtual const bool isrunning() const = 0;
-  
-  void log()
+ 
+  void log_data()
   {
-     for (size_t i = 0; i < m_objects.size(); i++)
-     {
-      m_objects.at(i).log_all();
-     }
-  }
-  void log_order() {
-    if (!(m_objects.size() > 1))
-      return;
-
-    wxString str = "";
-    for (size_t i = 0; i < m_objects.size(); i++) {
-      char c = (i == m_objects.size() - 1) ? '\0' : ',';
-
-      if (i == m_index()) {
-        str += wxString::Format(">%zu<%c", i, c);
-      } else {
-        str += wxString::Format("%zu%c", i, c);
-      }
+    wxString str="";
+    for(size_t i=0;i<m_objects.size();i++)
+    {
+     str += wxString::Format("(l:%zu,id:%zu)",i,m_objects.at(i).id);
     }
-    wxLogDebug("lists [%s]", str.c_str());
-  }
-  void log_display_order() {
-    if (!(m_objects.size() > 1))
-      return;
-
-    wxString str = "";
-    for (size_t i = (m_index() + 1) % m_objects.size(); i != m_index();
-         i = (i + 1) % m_objects.size()) {
-      char c = (i == m_objects.size() - 1) ? '\0' : ',';
-
-      if (i == m_index()) {
-        str += wxString::Format(">%zu<%c", i, c);
-      } else {
-        str += wxString::Format("%zu%c", i, c);
-      }
-    }
-    wxLogDebug("lists [%s]", str.c_str());
-  }
-  void log_args()
-  {
-  wxLogDebug("prev %zu",prev_index());
-  wxLogDebug(m_objects.at(prev_index()).prev());
-  wxLogDebug(m_objects.at(prev_index()).srect());
-  wxLogDebug(m_objects.at(prev_index()).future());
-  wxLogDebug("now %zu", m_index());
-  wxLogDebug(m_objects.at(m_index()).prev());
-  wxLogDebug(m_objects.at(m_index()).srect());
-  wxLogDebug(m_objects.at(m_index()).future());
-  wxLogDebug("future %zu",future_index());
-  wxLogDebug(m_objects.at(future_index()).prev());
-  wxLogDebug(m_objects.at(future_index()).srect());
-  wxLogDebug(m_objects.at(future_index()).future());
-  wxLogDebug("\n");
+    wxLogDebug("<object> %s out(%zu)",str.c_str(),m_object.id);
   }
 };

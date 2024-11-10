@@ -25,3 +25,9 @@ inline void log_rect(const wxString& str,const wxRect& rect)
     wxLogDebug(wxString::Format("%s rect(x:%d,y:%d,w:%d,h:%d))", str,rect.x, rect.y, rect.width,
                             rect.height));
 }
+
+inline wxFont FONT(const size_t& size,const bool& bold = true)
+{
+    return wxFont(size, wxFONTFAMILY_DECORATIVE, wxFONTSTYLE_NORMAL,
+                           bold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL);
+}

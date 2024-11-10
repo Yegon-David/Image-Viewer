@@ -3,7 +3,8 @@
 Gallery::Gallery(wxWindow *parent)
     : wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                wxFULL_REPAINT_ON_RESIZE),
-      AnimationLogic() {
+      AnimationLogic() 
+{
 
   this->SetBackgroundStyle(wxBG_STYLE_PAINT);
 
@@ -17,17 +18,18 @@ Gallery::Gallery(wxWindow *parent)
 
 void Gallery::load_images() {
   m_objects.push_back(
-      {{"D:/pjojects/images/New folder/n1.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+      {{"D:/pjojects/images/New folder/a.jpg", wxBITMAP_TYPE_ANY}, wxRect(),1});
   m_objects.push_back(
-      {{"D:/pjojects/images/New folder/a.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+      {{"D:/pjojects/images/New folder/n1.jpg", wxBITMAP_TYPE_ANY}, wxRect(),0});
+
   m_objects.push_back(
-      {{"D:/pjojects/images/New folder/n2.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+      {{"D:/pjojects/images/New folder/n2.jpg", wxBITMAP_TYPE_ANY}, wxRect(),2});
   m_objects.push_back(
-      {{"D:/pjojects/images/New folder/n3.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+      {{"D:/pjojects/images/New folder/n3.jpg", wxBITMAP_TYPE_ANY}, wxRect(),3});
   m_objects.push_back(
-      {{"D:/pjojects/images/New folder/n4.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+      {{"D:/pjojects/images/New folder/n4.jpg", wxBITMAP_TYPE_ANY}, wxRect(),4});
   m_objects.push_back(
-      {{"D:/pjojects/images/New folder/n5.jpg", wxBITMAP_TYPE_ANY}, wxRect()});
+      {{"D:/pjojects/images/New folder/n5.jpg", wxBITMAP_TYPE_ANY}, wxRect(),5});
 
   m_object = pop();
  
@@ -41,41 +43,33 @@ void Gallery::on_paint(wxPaintEvent &evt) {
   auto gc = wxGraphicsContext::Create(dc);
 
   if (gc && !m_objects.empty()) {
-    auto rect = f_rect;
-    rect.Deflate(m_deflation() - 3);
+    auto rect = get_banner_rect();
     gc->PushState();
     gc->SetBrush(wxBrush("#0001"));
     gc->DrawRoundedRectangle(rect.x-3, rect.y+7, rect.width, rect.height, 1);
     gc->PopState();
-
+    
     if (m_object.image.IsOk())
 
     {
       this->draw_image(&gc, m_object.image,
-                       m_object.rect,6);
+                       m_object.rect);
+      // this->draw_text(&gc,m_object.rect);
     }
     if (isrunning() && m_object_front.image.IsOk())
 
     {
       this->draw_image(&gc, m_object_front.image,
-                       m_object_front.rect,6);
+                       m_object_front.rect);
     }
+    
+    for (size_t i = 0;i < m_objects.size();i++) {
 
-    for (size_t i = 0;i<m_objects.size();i++) {
+      if(i == 0 && isrunning()) continue;
  
-      if (m_objects.at(i).image.IsOk() && get_banner_rect() != m_objects.at(i).rect) {
-
-       
-        
+      if (m_objects.at(i).image.IsOk()) {
         this->draw_image(&gc, m_objects.at(i).image,m_objects.at(i).rect, 2);
-
-        gc->SetFont(wxFont(10, wxFONTFAMILY_DECORATIVE, wxFONTSTYLE_NORMAL,
-                           wxFONTWEIGHT_BOLD),
-                    "#fff");
-
-        gc->DrawText(wxString::Format("image: %zu", i),
-                     m_objects.at(i).rect.x + 10,
-                     m_objects.at(i).rect.y + m_objects.at(i).rect.height / 2);
+        // this->draw_text(&gc,m_objects.at(i).rect);
 
       } else {
         wxLogDebug("Image at index %zu not ok!", i);
@@ -109,6 +103,9 @@ void Gallery::draw_image(wxGraphicsContext **gc, const wxBitmap &image,
 
     if (roundness)
         (*gc)->Clip(region);
+        else
+        (*gc)->Clip(rect);
+
 
     double image_width =
         static_cast<double>(image.GetWidth()); // is initially int
@@ -124,8 +121,57 @@ void Gallery::draw_image(wxGraphicsContext **gc, const wxBitmap &image,
 
     (*gc)->DrawBitmap(image, x, y, image_width, image_height);
 
-    if (roundness)
+
         (*gc)->ResetClip();
+}
+
+void Gallery::draw_text(wxGraphicsContext **gc,wxRect rect)
+{   
+   double padding = 10;
+   
+    (*gc)->SetBrush(wxBrush("#0007"));
+    (*gc)->SetPen(wxPen("#fff"));
+    (*gc)->SetFont(FONT(12,false),"#fff");
+
+    rect.Deflate(static_cast<int>(m_object.rect.GetHeight() / 5));
+    rect.SetX(m_object.rect.x + padding);
+    (*gc)->DrawRoundedRectangle(rect.x-3, rect.y+7, rect.width, rect.height, 1);
+
+    double header_height = rect.height * 0.2;
+    double date_height = rect.height * 0.15;
+    double description_height = rect.height -(date_height+header_height);
+    
+    
+      
+      wxString text= "Filename";
+      wxString ext= ".jpg";
+      wxString date= "2023/09/04";
+      wxString resolution= "1650 * 728";
+      wxString path= "D:/pjojects/c++/projects/wx/Viewer";
+      
+      double th,tw;
+
+      (*gc)->GetTextExtent(text,&tw,&th);
+      (*gc)->DrawText(text,rect.x + padding,rect.y  + th /2); 
+
+      (*gc)->GetTextExtent(ext,&tw,&th);
+      (*gc)->DrawText(ext,rect.x + rect.width - padding - tw,rect.y  + th /2); 
+      
+      (*gc)->SetFont(FONT(10,false),"#fff4");
+
+      (*gc)->GetTextExtent(resolution,&tw,&th);
+      (*gc)->DrawText(resolution,rect.x + padding,rect.y + header_height + th / 2); 
+
+      (*gc)->GetTextExtent(date,&tw,&th);
+      (*gc)->DrawText(date,rect.x + rect.width - padding - tw,rect.y + header_height + th / 2);
+
+      (*gc)->SetFont(FONT(12,false),"#fff8");
+      (*gc)->GetTextExtent(path,&tw,&th);
+      (*gc)->DrawText(path,rect.x + padding,rect.y + header_height + date_height+20); 
+
+    (*gc)->StrokeLine(rect.x,rect.y+header_height,rect.x+rect.width,rect.y+header_height);
+    
+
 }
 
 void Gallery::on_size(wxSizeEvent &evt) {
@@ -154,13 +200,10 @@ void Gallery::update_cordinates() {
    
     m_objects.at(i).prev_rect =(i==0)? m_object.rect : m_objects.at(pindex).rect;
     m_objects.at(i).future_rect =(i==m_objects.size()-1)? m_object.rect : m_objects.at(nindex).rect;
+     m_objects.at(i).log_all();
    }
 
-     m_object_front = m_objects.at(0);
-     m_object_back = m_objects.at(m_objects.size()-1);
     
-    m_object_front.log_all();
-  
 }
 
 void Gallery::on_key_down(wxKeyEvent &evt) {
@@ -174,6 +217,7 @@ void Gallery::on_key_down(wxKeyEvent &evt) {
   {
      this->update_cordinates();
      this->f_refresh();
+     
   }
   else if(evt.GetUnicodeKey() == 'S')
   {

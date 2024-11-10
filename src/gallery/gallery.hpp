@@ -27,7 +27,7 @@ private:
     return rect;
   }
   wxRect get_next_rect() const {
-    const double card_width = f_rect.GetWidth() * 0.2;
+    const double card_width = f_rect.GetWidth() * 0.18;
     const double card_height = f_rect.GetHeight() * 0.4;
 
     const double y = f_rect.GetY() + (f_rect.GetHeight() - card_height) / 2;
@@ -36,7 +36,10 @@ private:
     return wxRect(wxRect2DDouble_to_wxRect(wxRect2DDouble(ix,y,card_width,card_height)));
   }
 
-
   void draw_image(wxGraphicsContext **gc, const wxBitmap &image,
+  
                   const wxRect &rect, const size_t &roundness = 0);
+
+  void draw_text(wxGraphicsContext **gc, wxRect rect);
+
 };

@@ -1,7 +1,7 @@
 #include "animation.hpp"
 
 AnimationLogic::AnimationLogic()
-    : DataLogic(), wxEvtHandler(), m_timer(this, wxID_ANY), m_duration(500),
+    : DataLogic(), wxEvtHandler(), m_timer(this, wxID_ANY), m_duration(400),
       a_type(Animation::Single) {
 
   Bind(wxEVT_MOVE, &AnimationLogic::on_move, this);
@@ -14,22 +14,25 @@ void AnimationLogic::on_timer(wxTimerEvent &evt) {
   if (elapsed <= m_duration) {
     double t = elapsed / m_duration;
 
-    animate_rect(m_object_front.rect, m_object_front.prev_rect,
-                 m_object_front.future_rect, t);
+    m_object_front.move(t);
 
-    offset = offset_start + t*t*(offset_end-offset_start);  
-    wxLogDebug("offset:%.3f",offset);           
+    offset = offset_start + t * t * (offset_end - offset_start);
+    for (size_t i = 0; i < m_objects.size(); i++) {
+      m_objects.at(i).move(t);
+    }
 
   } else {
-    animate_rect(m_object_front.rect, m_object_front.prev_rect,
-                 m_object_front.future_rect, 1);
-
+    m_object_front.move(1);
+    for (size_t i = 0; i < m_objects.size(); i++) {
+      m_objects.at(i).move(1);
+    }
     m_timer.Stop();
-    set_next();
-    this->update_cordinates();
+    if (a_type == Animation::Next)
+      set_next();
 
+    this->update_cordinates();
   }
-  this->f_refresh();
+  this->refresh();
   evt.Skip();
 }
 
@@ -55,37 +58,59 @@ void AnimationLogic::animate_pick_at() {
 }
 
 void AnimationLogic::animate() {
-  if (m_objects.size() <= 1) {
+  if (m_objects.size() < 1) {
     wxLogDebug("No images to animate");
     return;
   }
   this->displace();
+  log_data();
   start_time = wxGetLocalTimeMillis();
 
   m_timer.Start(16);
 }
 
 void AnimationLogic::displace() {
+  auto start_rect = get_next_rect();
   switch (a_type) {
 
   case Animation::Next:
+    m_object_front = m_objects.at(0);
     m_object_front.future_rect = m_object_front.prev_rect;
     m_object_front.prev_rect = m_object_front.rect;
+
+
+
+    for (size_t i = 0; i < m_objects.size(); i++) {
+      m_objects.at(i).future_rect = m_objects.at(i).prev_rect;
+      m_objects.at(i).prev_rect = m_objects.at(i).rect;
+     }
+
+    offset_start = start_rect.width + m_gap;
+    m_object_front.log_all();
     break;
 
   case Animation::Prev:
-    m_object_front.prev_rect = m_object_front.future_rect;
-    m_object_front.future_rect = m_object_front.rect;
+    m_object_front = m_object;
+    m_object_front.prev_rect = m_object.rect;
+    m_object_front.future_rect = get_next_rect();
+    set_prev();
+    m_object.rect = get_banner_rect();
+
+    for (size_t i = 0; i < m_objects.size(); i++) {
+      //  m_objects.at(i).future_rect = m_objects.at(i).prev_rect;
+      m_objects.at(i).prev_rect = m_objects.at(i).rect;
+      m_objects.at(i).log_all();
+    }
+
     break;
 
   case Animation::Single:
-    offset=100;
+    offset_start = 100;
     break;
 
   default:
     break;
   }
-  m_object_front.log_all();
 }
 
 void AnimationLogic::animate_rect(wxRect &rect, const wxRect &rect_old,
